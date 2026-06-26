@@ -4,7 +4,7 @@
 # and on every patch cycle (see README → Maintenance policy).
 argon2-cffi==23.1.0
 PyJWT==2.9.0
-cryptography==43.0.1
+cryptography==48.0.1
 
 # Optional — install with the matching extra:
 #   pip install "aegis-security[django,redis,sanitize]"

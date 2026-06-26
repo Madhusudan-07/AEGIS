@@ -16,7 +16,7 @@ authors = [{ name = "AEGIS" }]
 dependencies = [
     "argon2-cffi>=23.1,<24",   # password hashing (Argon2id)
     "PyJWT>=2.9,<3",           # token signing/verification
-    "cryptography>=43,<44",    # AES-256-GCM field encryption, HKDF, CSPRNG
+    "cryptography>=48.0.1,<49",    # AES-256-GCM field encryption, HKDF, CSPRNG
 ]
 
 [project.optional-dependencies]
