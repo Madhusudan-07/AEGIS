@@ -16,6 +16,94 @@
       "threat": "T1/A02",
       "summary": "malformed field ciphertext must fail closed (fuzz find)",
       "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT01",
+      "path": "tests/regression/test_REG_20260626_AGENT01_pyjwt.py",
+      "sha256": "124f78f0b976d00fa5fdc2478911dbb9de6ecab9fcf90de852187b78d2d4ab87",
+      "threat": "A06",
+      "summary": "pyjwt 2.9.0 affected by PYSEC-2026-120 (fix: 2.12.0)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT02",
+      "path": "tests/regression/test_REG_20260626_AGENT02_pyjwt.py",
+      "sha256": "0c5acbc06eb1378f1dc1d3399d43a2610e8d651dc6837bd05ffe43afaafa9d3a",
+      "threat": "A06",
+      "summary": "pyjwt 2.9.0 affected by PYSEC-2025-183",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT03",
+      "path": "tests/regression/test_REG_20260626_AGENT03_pyjwt.py",
+      "sha256": "dfed8f3abefce0594cfa3aaa75d3e8f752451e39ec042f356256130371abb241",
+      "threat": "A06",
+      "summary": "pyjwt 2.9.0 affected by PYSEC-2026-179 (fix: 2.13.0)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT04",
+      "path": "tests/regression/test_REG_20260626_AGENT04_pyjwt.py",
+      "sha256": "5dd6d34524949f9c0b95ae8176cc494680b267277ca6fc429df296184dae9db0",
+      "threat": "A06",
+      "summary": "pyjwt 2.9.0 affected by PYSEC-2026-175 (fix: 2.13.0)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT05",
+      "path": "tests/regression/test_REG_20260626_AGENT05_pyjwt.py",
+      "sha256": "3a92ab6663113a1359f69a4f4a7fba030d4d27b03223321e7061b4601595f7c9",
+      "threat": "A06",
+      "summary": "pyjwt 2.9.0 affected by PYSEC-2026-177 (fix: 2.13.0)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT06",
+      "path": "tests/regression/test_REG_20260626_AGENT06_pyjwt.py",
+      "sha256": "5ac2b6956029735beb4fa22a79bb9d3e3227017ab9d59882d22a524054a9894a",
+      "threat": "A06",
+      "summary": "pyjwt 2.9.0 affected by PYSEC-2026-178 (fix: 2.13.0)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT07",
+      "path": "tests/regression/test_REG_20260626_AGENT07_pyjwt.py",
+      "sha256": "fe6397154a14963f9fa25f203c645fff4230b8d6a263fae683374f44262cc41b",
+      "threat": "A06",
+      "summary": "pyjwt 2.9.0 affected by PYSEC-2026-176 (fix: 2.12.1)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT08",
+      "path": "tests/regression/test_REG_20260626_AGENT08_cryptography.py",
+      "sha256": "8f9903622f650ed55ab876304668abc60524fcd5ea957bfb4fd590c6f0da817f",
+      "threat": "A06",
+      "summary": "cryptography 43.0.1 affected by PYSEC-2026-35 (fix: 46.0.6)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT09",
+      "path": "tests/regression/test_REG_20260626_AGENT09_cryptography.py",
+      "sha256": "3b742f6bad424b3e95d30191a1e44c8843e5b18749316f33975b6dad885b18d3",
+      "threat": "A06",
+      "summary": "cryptography 43.0.1 affected by GHSA-79v4-65xg-pq4g (fix: 44.0.1)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT10",
+      "path": "tests/regression/test_REG_20260626_AGENT10_cryptography.py",
+      "sha256": "a7e27cd0c3325ffa29e238f1d8ec8d6b6a448f30a6a7303d18ccea82093ad8c3",
+      "threat": "A06",
+      "summary": "cryptography 43.0.1 affected by GHSA-r6ph-v2qm-q3c2 (fix: 46.0.5)",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-AGENT11",
+      "path": "tests/regression/test_REG_20260626_AGENT11_cryptography.py",
+      "sha256": "61c430d0c1c2df05e0d733d3bf938e61185a6b8c6d104b1a338c47a58708509d",
+      "threat": "A06",
+      "summary": "cryptography 43.0.1 affected by GHSA-537c-gmf6-5ccf (fix: 48.0.1)",
+      "added": "2026-06-26"
     }
   ]
 }
