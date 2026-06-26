@@ -24,7 +24,7 @@ django = ["Django>=4.2"]
 redis = ["redis>=5.0"]
 sanitize = ["bleach>=6.1"]    # vetted HTML sanitizer for output encoding
 dev = [
-    "pytest>=8.3,<9",
+    "pytest>=9.0.3,<10",
     "pip-audit>=2.7",         # dependency CVE scanning (CI gate)
     "bandit>=1.7",            # SAST (CI gate)
     "hypothesis>=6.100",      # property-based fuzzing of validation/crypto surfaces
