@@ -1,9 +1,15 @@
 # Secrets must never be committed (spec: no secrets in repo).
+# NOTE: keep these specific — an unanchored `secrets.*` also matches the SOURCE module
+# aegis/core/modules/secrets.py and silently drops it from the repo.
 .env
 *.env
 *.key
 *.pem
-secrets.*
+secrets.json
+secrets.yaml
+secrets.yml
+secrets.txt
+.secrets
 
 # Python
 __pycache__/
