@@ -12,8 +12,9 @@ the agent's good behavior.
 
 ## Reporting a vulnerability
 
-Email the maintainers (do not open a public issue for an unfixed vuln). Confirmed issues
-become a permanent regression test under `tests/regression/` **before** the fix lands.
+Report privately to **madhusudan0708@gmail.com** (do not open a public issue for an
+unfixed vuln). Confirmed issues become a permanent regression test under
+`tests/regression/` **before** the fix lands.
 
 ## How the loop is wired (operator setup)
 
