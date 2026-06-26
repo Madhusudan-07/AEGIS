@@ -3,3 +3,5 @@ pytest==8.3.2
 pip-audit==2.7.3
 bandit==1.7.9
 hypothesis==6.112.1
+# Pin Django for reproducible CI (the `django` extra is uncapped for end users).
+Django==6.0.6

@@ -67,5 +67,5 @@ jobs:
           RATCHET_OVERRIDE: ${{ steps.ovr.outputs.override }}
           PR_LABELS: ${{ steps.ovr.outputs.labels }}
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=0 || true
+          git fetch origin "${{ github.base_ref }}" || true
           python security/ratchet/ratchet_guard.py
