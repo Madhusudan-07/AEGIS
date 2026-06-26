@@ -1,0 +1,18 @@
+# Mandatory senior review on security-critical paths (spec §7).
+# Replace @AEGIS-security-leads with your real reviewing team/users before relying on this.
+# Branch protection must have "Require review from Code Owners" enabled for this to bind.
+
+# Crypto, auth, secrets — never merge without senior security review.
+/aegis/core/crypto.py              @Madhusudan-07
+/aegis/core/modules/authn.py       @Madhusudan-07
+/aegis/core/modules/authz.py       @Madhusudan-07
+/aegis/core/modules/secrets.py     @Madhusudan-07
+/aegis/core/modules/encryption.py  @Madhusudan-07
+
+# The ratchet + its guard are security-critical: changes need senior review (§6, §7).
+/security/ratchet/                 @Madhusudan-07
+/tests/regression/                 @Madhusudan-07
+
+# CI gates and the agent: changing these changes the loop's guarantees.
+/.github/workflows/                @Madhusudan-07
+/security/agent/                   @Madhusudan-07

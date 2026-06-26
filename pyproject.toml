@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegis-security"
+version = "0.1.0"
+description = "AEGIS — plug-and-play, secure-by-default, fail-closed security layer for Django/Python (OWASP ASVS L2)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "AEGIS" }]
+
+# Runtime deps are wrappers over VETTED, audited libraries (see §5 of the spec).
+# Exact pins live in requirements.txt (the lockfile). Ranges here are compatible-release.
+dependencies = [
+    "argon2-cffi>=23.1",       # password hashing (Argon2id)
+    "PyJWT>=2.13,<3",          # token signing/verification (>=2.13 clears known CVEs)
+    "cryptography>=44,<50",    # AES-256-GCM field encryption, HKDF, CSPRNG (>=44 clears CVEs)
+]
+
+[project.optional-dependencies]
+django = ["Django>=4.2"]
+redis = ["redis>=5.0"]
+sanitize = ["bleach>=6.1"]    # vetted HTML sanitizer for output encoding
+dev = [
+    "pytest>=9.0.3,<10",
+    "pip-audit>=2.7",         # dependency CVE scanning (CI gate)
+    "bandit>=1.7",            # SAST (CI gate)
+    "hypothesis>=6.100",      # property-based fuzzing of validation/crypto surfaces
+]
+
+[tool.setuptools.packages.find]
+include = ["aegis*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# NOTE: do NOT globally escalate DeprecationWarning to error — third-party deps emit
+# import-time deprecations that drift over time and would fail CI for reasons unrelated
+# to AEGIS (and surface as a pytest usage error / exit 4). Scope strictness to our code.
+filterwarnings = ["error::DeprecationWarning:aegis.*"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]

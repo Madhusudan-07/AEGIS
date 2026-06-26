@@ -1,0 +1,34 @@
+# AEGIS self-hardening loop — staged-rollout config (spec §7: breadth is blast radius).
+#
+# Stage the loop one subsystem at a time, widening only as it earns trust:
+#   report-only -> pr-only -> enforce
+#
+# These flags are read by the workflows/agent and documented in SECURITY.md.
+
+# Master mode for newer/looser subsystems (DAST, fuzzing, the agent).
+#   report-only : run, publish artifacts, never fail the build, never open PRs
+#   pr-only     : run + open PRs for findings, but findings don't fail the build
+#   enforce     : findings fail the build
+mode: pr-only
+
+subsystems:
+  # Mature gates — always enforced (fail the build on critical findings).
+  dependency_scan: enforce      # pip-audit
+  sast: enforce                 # bandit
+  secret_scan: enforce          # gitleaks
+  adversarial_corpus: enforce   # pytest adversarial + regression
+  fail_closed_proofs: enforce
+  ratchet_guard: enforce        # Subsystem C — never relax this
+
+  # Newer, noisier surfaces — start soft, harden over time.
+  dast: report-only             # live probing of the ephemeral instance
+  fuzzing: report-only          # hypothesis property tests (advisory until stable)
+
+agent:
+  enabled: true
+  # The agent may ONLY open PRs to branches under this prefix. Never a protected branch.
+  branch_prefix: "security/auto/"
+  base_branch: "main"
+  max_prs_per_run: 3
+  fix_label: "security-fix"
+  override_label: "security-override-approved"
