@@ -1,0 +1,110 @@
+name: aegis-daily-security
+
+# Subsystem A — the daily attack battery (spec §4). Runs on a schedule + manual dispatch.
+# Mature gates fail the build on critical findings; newer surfaces (DAST/fuzz) are
+# report-only per security/loop.config.yml (staged rollout). All results are published as
+# artifacts that feed the AI triage agent (Subsystem B).
+
+on:
+  schedule:
+    - cron: "0 6 * * *"     # daily 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-analysis:
+    name: Deps / SAST / Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }      # full history for secret scan
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e ".[django,sanitize]"
+          mkdir -p reports
+
+      - name: Dependency CVE scan (pip-audit) — fail on any known vuln
+        run: pip-audit -r requirements.txt --strict --format json --output reports/pip-audit.json
+
+      - name: SAST (bandit) — fail on medium+ severity
+        run: bandit -r aegis -c pyproject.toml -ll -f json -o reports/bandit.json
+
+      - name: Secret scan (gitleaks) — fail on any secret in code/history
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source . --no-banner --redact \
+            --report-format json --report-path reports/gitleaks.json || true
+          COUNT=$(jq 'length' reports/gitleaks.json)
+          echo "gitleaks findings: $COUNT"
+          test "$COUNT" = "0"
+
+      - name: SBOM
+        if: always()
+        run: python supplychain/sbom.py > reports/sbom.json
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: security-reports-static, path: reports/ }
+
+  test-battery:
+    name: Adversarial corpus + fail-closed + fuzz + ratchet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e ".[django,sanitize]"
+          mkdir -p reports
+
+      - name: AEGIS adversarial corpus + fail-closed proofs + regression + fuzz
+        run: pytest -q --junitxml=reports/pytest.xml
+
+      - name: Ratchet integrity (corpus intact, coverage monotonic)
+        run: python security/ratchet/ratchet_guard.py
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: security-reports-tests, path: reports/ }
+
+  dast:
+    name: DAST live probe (report-only)
+    runs-on: ubuntu-latest
+    continue-on-error: true     # report-only stage (security/loop.config.yml: dast=report-only)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[django,sanitize]"
+          mkdir -p reports
+
+      - name: Boot ephemeral AEGIS-protected instance
+        run: |
+          AEGIS_ENV=development python examples/demo_app/server.py &
+          echo $! > server.pid
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/ >/dev/null 2>&1 && break || sleep 1
+          done
+
+      - name: Live attack probe
+        run: python security/dast/probe.py --base-url http://127.0.0.1:8000 --report reports/dast.json
+
+      - name: Stop instance
+        if: always()
+        run: kill "$(cat server.pid)" 2>/dev/null || true
+
+      - name: Upload DAST report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: security-reports-dast, path: reports/ }

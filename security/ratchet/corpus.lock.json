@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "REG-20260625-0001",
+      "path": "tests/regression/test_REG_20260625_0001_jwt_alg_none.py",
+      "sha256": "bc19ecfd148680eb1be47499ac9313c42dd8182416f5000fed571891919c169f",
+      "threat": "S1/AC2",
+      "summary": "forged JWT alg:none must not authenticate",
+      "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260626-0002",
+      "path": "tests/regression/test_REG_20260626_0002_malformed_ciphertext.py",
+      "sha256": "bc3b90a9ed91a1e13d43f517085a82975176d76a586dd6ac4edc8f10beec6073",
+      "threat": "T1/A02",
+      "summary": "malformed field ciphertext must fail closed (fuzz find)",
+      "added": "2026-06-26"
+    }
+  ]
+}

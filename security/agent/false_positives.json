@@ -1,0 +1,10 @@
+{
+  "_comment": "Confirmed false positives, each with a written reason (spec §5 triage). The agent skips these and humans review additions. Append-only in spirit; removing an entry re-opens that finding.",
+  "entries": [
+    {
+      "fingerprint": "bandit:B105:aegis/core/engine.py",
+      "reason": "token_type == 'access' is a token-type label compared to a string, not a hardcoded password. Verified by inspection; nosec annotated.",
+      "added": "2026-06-26"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+name: aegis-pr-security
+
+# Runs on every PR. Includes the RATCHET GUARD (Subsystem C) which must be set as a
+# REQUIRED status check in branch protection (see SECURITY.md). The guard enforces that
+# a PR can only ADD constraints — coverage cannot shrink and the corpus cannot be filed
+# down — unless a human applies the `security-override-approved` label (logged).
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read          # least privilege: read-only; this workflow never writes
+
+concurrency:
+  group: pr-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  battery:
+    name: Test battery (PR)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install (pinned)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e ".[django,sanitize]"
+      - name: Dependency CVE scan (pip-audit)
+        run: pip-audit -r requirements.txt --strict
+      - name: SAST (bandit, medium+ fails)
+        run: bandit -r aegis -c pyproject.toml -ll
+      - name: Adversarial corpus + fail-closed proofs + regression + fuzz
+        run: pytest -q
+
+  ratchet-guard:
+    name: Ratchet guard (REQUIRED)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history so the guard can diff against the base
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Install (for test collection)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e ".[django,sanitize]"
+      - name: Determine override label
+        id: ovr
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          echo "labels=$LABELS" >> "$GITHUB_OUTPUT"
+          if echo "$LABELS" | tr ',' '\n' | grep -qx 'security-override-approved'; then
+            echo "override=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "override=0" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run ratchet guard
+        env:
+          RATCHET_BASE: origin/${{ github.base_ref }}
+          RATCHET_OVERRIDE: ${{ steps.ovr.outputs.override }}
+          PR_LABELS: ${{ steps.ovr.outputs.labels }}
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=0 || true
+          python security/ratchet/ratchet_guard.py

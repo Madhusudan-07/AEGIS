@@ -1,0 +1,70 @@
+name: aegis-security-agent
+
+# Subsystem B — AI triage + improvement agent. Runs after the daily battery (or manually).
+# It PROPOSES ONLY: triages findings, writes regression tests first, and opens ONE PR per
+# fix to a NON-protected security/auto/* branch. It cannot merge, push to the default
+# branch, deploy, or read secrets — those boundaries are enforced by the token scope and
+# by branch protection, not by the agent's good behavior (spec §7).
+
+on:
+  workflow_run:
+    workflows: ["aegis-daily-security"]
+    types: [completed]
+  workflow_dispatch:
+
+# Least privilege: open PRs to non-protected branches. NOT deployments; NOT environments.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  triage:
+    # Only act when the battery surfaced something (or a human dispatched it).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Dedicated least-privilege agent token (see SECURITY.md for required scopes).
+          # MUST NOT be able to write to the default branch, deploy, or read other secrets.
+          token: ${{ secrets.AEGIS_AGENT_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e ".[django,sanitize]"
+
+      - name: Download battery reports (untrusted input)
+        uses: actions/download-artifact@v4
+        with:
+          path: reports
+          merge-multiple: true
+          run-id: ${{ github.event.workflow_run.id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Configure bot identity
+        run: |
+          git config user.name "aegis-triage-bot"
+          git config user.email "aegis-bot@users.noreply.github.com"
+
+      - name: Run triage agent (propose-only)
+        env:
+          # The agent token can open PRs to security/auto/* only; branch protection on the
+          # default branch blocks merge without human approval. It cannot deploy or approve.
+          GH_TOKEN: ${{ secrets.AEGIS_AGENT_TOKEN }}
+          # Optional LLM enrichment. If unset, the deterministic triage still runs.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # SECRET ISOLATION (§7): scanner credentials are deliberately NOT placed in this
+          # step's environment, and findings are treated as untrusted (prompt-injection
+          # defense lives in security/agent/PROMPT.md + run_agent.py).
+        run: |
+          python security/agent/run_agent.py \
+            --reports reports \
+            --open-pr \
+            --base "${{ github.event.repository.default_branch || 'main' }}" \
+            --max-prs 3

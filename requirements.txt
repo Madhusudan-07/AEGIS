@@ -1,0 +1,13 @@
+# AEGIS runtime lockfile — PINNED, vetted, audited libraries only.
+# Strength comes from components that survived years of real attack, not fresh code.
+# DO NOT trust these versions blindly: run `pip-audit -r requirements.txt` before deploy
+# and on every patch cycle (see README → Maintenance policy).
+argon2-cffi==23.1.0
+PyJWT==2.9.0
+cryptography==43.0.1
+
+# Optional — install with the matching extra:
+#   pip install "aegis-security[django,redis,sanitize]"
+# Django==5.0.8
+# redis==5.0.8
+# bleach==6.1.0
