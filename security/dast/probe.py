@@ -22,6 +22,9 @@ def _request(method: str, url: str, headers: dict | None = None):
         return resp.status, {k.lower(): v for k, v in resp.headers.items()}
     except urllib.error.HTTPError as exc:
         return exc.code, {k.lower(): v for k, v in exc.headers.items()}
+    except urllib.error.URLError:
+        # Server not reachable (e.g. didn't boot in time) -> report, don't crash.
+        return 0, {}
 
 
 def run(base: str) -> list[dict]:
