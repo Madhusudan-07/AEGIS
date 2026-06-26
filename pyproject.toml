@@ -15,7 +15,7 @@ authors = [{ name = "AEGIS" }]
 # Exact pins live in requirements.txt (the lockfile). Ranges here are compatible-release.
 dependencies = [
     "argon2-cffi>=23.1,<24",   # password hashing (Argon2id)
-    "PyJWT>=2.9,<3",           # token signing/verification
+    "PyJWT>=2.13.0,<3",           # token signing/verification
     "cryptography>=43,<44",    # AES-256-GCM field encryption, HKDF, CSPRNG
 ]
 
