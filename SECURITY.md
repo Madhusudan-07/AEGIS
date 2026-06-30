@@ -10,6 +10,15 @@ The AI agent **hunts and proposes**. **Humans approve and merge.** No automated 
 silently change security-critical code. This is enforced by CI and repo settings, not by
 the agent's good behavior.
 
+## Supported versions
+
+AEGIS is pre-1.0; only the latest release line receives security fixes.
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.1.x   | :white_check_mark: |
+| < 0.1   | :x:                |
+
 ## Reporting a vulnerability
 
 Report privately to **madhusudan0708@gmail.com** (do not open a public issue for an

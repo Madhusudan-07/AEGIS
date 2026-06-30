@@ -64,3 +64,10 @@ def test_pr_body_states_propose_only():
     body = agent.pr_body([], [], [], [])
     assert "propose-only" in body.lower()
     assert "human" in body.lower()
+
+
+def test_pr_opened_only_with_committable_regressions():
+    # Regression: the agent must NOT attempt a PR (empty commit) when findings only need
+    # human authorship. A PR is opened solely when there's a test-first change to commit.
+    assert agent.should_open_pr([]) is False                      # nothing / needs_human only
+    assert agent.should_open_pr([{"reg_id": "REG-x"}]) is True     # has a locked regression

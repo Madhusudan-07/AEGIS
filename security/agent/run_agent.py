@@ -208,14 +208,26 @@ def _run(cmd: list[str], check: bool = True) -> str:
     return res.stdout.strip()
 
 
-def open_pr(branch: str, title: str, body: str, label: str, base: str) -> None:
+def should_open_pr(locked: list) -> bool:
+    """Open a PR ONLY when there are committable regression changes (test-first).
+    Findings the agent can't auto-fix are flagged separately — never an empty commit."""
+    return bool(locked)
+
+
+def open_pr(branch: str, title: str, body: str, label: str, base: str) -> bool:
+    """Branch + commit the staged regression changes + open a PR. Returns False (without
+    committing) if nothing is staged, so the agent never creates an empty commit/PR."""
     _run(["git", "checkout", "-b", branch])
     _run(["git", "add", "tests/regression", "security/ratchet"])
+    if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=ROOT).returncode == 0:
+        _run(["git", "checkout", base])  # nothing to propose -> abandon the branch
+        return False
     _run(["git", "commit", "-m", title])
     _run(["git", "push", "-u", "origin", branch])
     # gh uses GH_TOKEN (least-privilege agent token). Cannot approve/merge its own PR.
     _run(["gh", "pr", "create", "--base", base, "--head", branch,
           "--title", title, "--body", body, "--label", label])
+    return True
 
 
 # --------------------------------------------------------------------------- #
@@ -258,11 +270,16 @@ def main() -> int:
     (ROOT / "reports/agent-triage.md").write_text(body, encoding="utf-8")
     print("\n" + body)
 
-    if args.open_pr and (locked or needs_human):
+    if args.open_pr and should_open_pr(locked):
         branch = f"{args.branch_prefix}{today}-{_run(['git', 'rev-parse', '--short', 'HEAD'])}"
         title = f"security: auto-triage {today} ({len(locked)} regression(s))"
-        open_pr(branch, title, body, "security-fix", args.base)
-        print(f"opened PR from {branch}")
+        if open_pr(branch, title, body, "security-fix", args.base):
+            print(f"opened PR from {branch}")
+    elif args.open_pr and needs_human:
+        # Findings the agent cannot safely auto-fix: flag for a human (they're in the
+        # printed report + artifact). Never open an empty PR.
+        print(f"\n[agent] {len(needs_human)} finding(s) need human authorship — "
+              "flagged, no auto-PR (nothing safe to auto-commit).")
     elif args.dry_run:
         print("\n[dry-run] no git/gh actions taken.")
     return 0
