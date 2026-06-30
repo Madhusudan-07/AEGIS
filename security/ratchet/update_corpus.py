@@ -73,7 +73,8 @@ def add_entry(path: str, id_: str, threat: str, summary: str) -> None:
     lock["entries"].append({
         "id": id_,
         "path": path,
-        "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+        # Normalize line endings so the lock hash is stable across LF/CRLF checkouts.
+        "sha256": hashlib.sha256(target.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
         "threat": threat,
         "summary": summary,
         "added": date.today().isoformat(),

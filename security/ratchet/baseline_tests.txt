@@ -24,6 +24,7 @@ tests/test_agent_triage.py::test_fingerprint_ignores_line_drift
 tests/test_agent_triage.py::test_non_dependency_finding_is_flagged_not_faked
 tests/test_agent_triage.py::test_normalize_pip_audit
 tests/test_agent_triage.py::test_pr_body_states_propose_only
+tests/test_agent_triage.py::test_pr_opened_only_with_committable_regressions
 tests/test_agent_triage.py::test_triage_dedupes_and_drops_false_positives
 tests/test_audit.py::test_chain_verifies_when_intact
 tests/test_audit.py::test_deletion_breaks_the_chain

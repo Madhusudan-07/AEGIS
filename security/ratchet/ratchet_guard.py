@@ -55,7 +55,10 @@ def _run(cmd: list[str]) -> str:
 
 
 def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Normalize line endings so a file hashes identically whether checked out as LF
+    # (repo / Linux CI) or CRLF (Windows working tree via git autocrlf).
+    data = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
 
 
 def collect_test_ids() -> set[str]:
