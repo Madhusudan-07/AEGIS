@@ -1,0 +1,20 @@
+# AEGIS gitleaks configuration.
+# Extends the FULL default ruleset — every real detector stays active on real source
+# (aegis/, security/, etc.). We only allowlist paths that, by design, contain FAKE
+# secrets: a security tool's tests and demo deliberately embed sample JWTs, dummy API
+# keys, and throwaway dev keys to verify redaction, auth, and fail-closed behavior.
+title = "AEGIS gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Test fixtures and the throwaway demo app contain intentionally-fake credentials used to
+exercise AEGIS's own secret-handling (e.g. the redaction tests in tests/test_audit.py).
+These are not real secrets. Real source directories remain fully scanned.
+"""
+paths = [
+  '''^tests/''',
+  '''^examples/''',
+]
