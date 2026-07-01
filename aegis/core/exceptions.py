@@ -72,6 +72,13 @@ class CsrfError(SecurityViolation):
     public_message = "Invalid or missing CSRF token."
 
 
+class EgressBlocked(SecurityViolation):
+    """An outbound (server-side) request targeted a forbidden destination (SSRF)."""
+
+    status_code = 400
+    public_message = "The requested URL is not allowed."
+
+
 class SecretError(BootSelfCheckError):
     """A required secret/key is missing, empty, or hardcoded."""
 

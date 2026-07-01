@@ -55,8 +55,9 @@ CONFIG = AegisConfig(
     rate_limit_per_ip=(200, 60),      # the flood defense (harness fires 250)
     auth_rate_limit=(50, 60),         # loose enough not to mask the lockout below
     lockout_threshold=5,              # the brute-force defense
+    egress_allow_http=True,           # demo fetches http:// internal targets -> block on the IP
     enabled_modules=(
-        "secrets", "headers", "ratelimit", "authn", "authz",
+        "secrets", "headers", "deception", "ratelimit", "authn", "authz",
         "validation", "encryption", "audit", "anomaly", "errors",
     ),
 )
@@ -116,20 +117,44 @@ def profile(request):
     return JsonResponse({"profile": {"display_name": body["display_name"]}})
 
 
+def fetch(request):
+    # A "link preview" feature — a classic SSRF surface. The egress guard validates the
+    # target BEFORE any request is made, so it can't be pointed at internal services.
+    import urllib.request
+
+    url = request.GET.get("url", "")
+    try:
+        ENGINE.check_egress(url)                       # <-- the SSRF guard (closes G2)
+    except SecurityViolation as exc:
+        return JsonResponse({"error": exc.public_message}, status=exc.status_code)
+    try:
+        with urllib.request.urlopen(url, timeout=3) as r:  # nosec B310 - egress-guarded above
+            return JsonResponse({"fetched": url, "preview": r.read(120).decode("utf-8", "replace")})
+    except Exception:
+        # Safe error handling: a generic message to the client, never the exception text.
+        return JsonResponse({"error": "upstream fetch failed"}, status=502)
+
+
 urlpatterns = [
     path("", home),
     path("login", login),
     path("notes", notes),
     path("admin/users", admin_users),
     path("profile", profile),
+    path("fetch", fetch),
 ]
 
 
 if __name__ == "__main__":
     import wsgiref.simple_server as wss
+    from socketserver import ThreadingMixIn
 
     from django.core.wsgi import get_wsgi_application
 
+    class ThreadingWSGIServer(ThreadingMixIn, wss.WSGIServer):  # concurrent, like a real server
+        daemon_threads = True
+
     wss.ServerHandler.server_software = ""  # don't advertise the server version
     print("SecureNotes [AEGIS-protected] on http://127.0.0.1:8001")
-    wss.make_server("127.0.0.1", 8001, get_wsgi_application()).serve_forever()
+    wss.make_server("127.0.0.1", 8001, get_wsgi_application(),
+                    server_class=ThreadingWSGIServer).serve_forever()

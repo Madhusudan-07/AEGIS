@@ -1,0 +1,47 @@
+name: CodeQL
+
+# Advanced CodeQL setup. It scans the SHIPPED code (aegis/, security/, supplychain/) and
+# excludes examples/ via .github/codeql/codeql-config.yml — because the red-team demo there
+# DELIBERATELY contains a vulnerable app (the "before" in the before/after). Scoping intent
+# lives in the config, not in per-alert dismissals.
+#
+# To activate: disable CodeQL "default setup" first
+# (Settings -> Code security -> Code scanning -> CodeQL -> switch to Advanced),
+# otherwise GitHub refuses to run advanced setup alongside default.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1"   # weekly re-scan
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, actions]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

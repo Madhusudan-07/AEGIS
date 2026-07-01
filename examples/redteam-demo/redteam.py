@@ -12,6 +12,7 @@ import base64
 import json
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 
 import jwt  # PyJWT — used to forge an alg:none token
 
@@ -103,6 +104,28 @@ def attack_flood(n=250):
     return (f"Request flood ({n} reqs)", v, a, bv > 0, ba > 0)
 
 
+def attack_ssrf():
+    # Coerce the app into fetching an INTERNAL address (loopback here stands in for an
+    # internal service or the cloud-metadata endpoint 169.254.169.254).
+    internal = quote("http://127.0.0.1:8000/", safe="")
+    sv, *_ = req("GET", f"{VULN}/fetch?url={internal}")
+    sa, *_ = req("GET", f"{AEGIS}/fetch?url={internal}")
+    v = f"BREACHED ({sv})" if sv != 400 else f"blocked ({sv})"
+    a = f"BLOCKED ({sa})" if sa == 400 else f"BREACHED ({sa})"
+    return ("SSRF -> internal address", v, a, sv == 400, sa == 400)
+
+
+def attack_honeypot():
+    # Scanner probes for a secret file, then tries a normal endpoint.
+    req("GET", f"{VULN}/.env")
+    req("GET", f"{AEGIS}/.env")          # trips the trap -> AEGIS blocklists this IP
+    sv, *_ = req("GET", f"{VULN}/")
+    sa, *_ = req("GET", f"{AEGIS}/")
+    v = f"still served ({sv})" if sv == 200 else f"blocked ({sv})"
+    a = f"IP BLOCKED ({sa})" if sa != 200 else f"served ({sa})"
+    return ("Scanner probes honeypot (/.env)", v, a, sv != 200, sa != 200)
+
+
 def row(name, sv, sa, *, breached):
     v = f"BREACHED ({sv})" if breached(sv) else f"blocked ({sv})"
     a = f"BLOCKED ({sa})" if not breached(sa) else f"BREACHED ({sa})"
@@ -125,8 +148,10 @@ def main() -> int:
         attack_broken_access(vuln_bob, aegis_bob),
         attack_mass_assignment(vuln_bob, aegis_bob),
         attack_security_headers(),
+        attack_ssrf(),
         attack_brute_force(),
         attack_flood(),
+        attack_honeypot(),   # LAST: it blocklists the caller's IP on the AEGIS side
     ]
 
     width = 92

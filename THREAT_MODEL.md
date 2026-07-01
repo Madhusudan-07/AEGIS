@@ -96,9 +96,15 @@ Out of scope (explicitly NOT defended here — see README *Limitations*):
 
 - **G1** AEGIS cannot stop a *valid* authenticated user abusing their own legitimate
   privileges (business-logic abuse). Mitigation is rate-limit + audit + anomaly only.
-- **G2** SSRF protection is advisory (egress allowlist helper); AEGIS cannot guarantee
-  the host network blocks all outbound — that needs infra-level egress control.
-- **G3** Anomaly detection is heuristic (threshold/velocity), not ML; it raises signals,
-  it does not by itself block sophisticated low-and-slow attacks.
+- **G2** ~~SSRF protection is advisory~~ — **ADDRESSED (v2):** the egress guard
+  (`engine.check_egress`, `aegis/core/egress.py`) resolves DNS and blocks
+  loopback/private/link-local/metadata targets before any fetch. Residual: call-time
+  validation isn't a substitute for a network-layer egress firewall (DNS-rebinding/TOCTOU,
+  permissive host networks). Reduced from a gap to a documented limitation.
+- **G3** Anomaly detection is heuristic (threshold/velocity), not ML — **ADVANCED (v2):**
+  the deception module (`aegis/core/modules/deception.py`) turns scanner recon into a
+  high-confidence trap-and-block signal, cheaply removing the noisy majority. Residual: a
+  careful low-and-slow attacker who avoids the decoys still isn't caught. Advanced, not
+  closed.
 - **G4** Generated code carries **no audit or attack history** — see README
   *Limitations & External Audit*. This must be pentested before guarding real data.

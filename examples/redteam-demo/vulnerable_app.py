@@ -95,19 +95,39 @@ def profile(request):
     return JsonResponse({"profile": USERS[ident["username"]]})
 
 
+def fetch(request):
+    import urllib.request
+
+    url = request.GET.get("url", "")
+    # VULN: fetches whatever URL the client supplies -> SSRF (internal services, cloud
+    # metadata at 169.254.169.254, etc. are all reachable).
+    try:
+        with urllib.request.urlopen(url, timeout=3) as r:  # nosec B310 - deliberately vulnerable
+            return JsonResponse({"fetched": url, "preview": r.read(120).decode("utf-8", "replace")})
+    except Exception as exc:
+        # VULN: leaks internal exception detail to the client (contrast with secure_app)
+        return JsonResponse({"fetched": url, "error": str(exc)}, status=502)
+
+
 urlpatterns = [
     path("", home),
     path("login", login),
     path("notes", notes),
     path("admin/users", admin_users),
     path("profile", profile),
+    path("fetch", fetch),
 ]
 
 
 if __name__ == "__main__":
-    from wsgiref.simple_server import make_server
+    from socketserver import ThreadingMixIn
+    from wsgiref.simple_server import WSGIServer, make_server
 
     from django.core.wsgi import get_wsgi_application
 
+    class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):  # concurrent, like a real server
+        daemon_threads = True
+
     print("SecureNotes [UNPROTECTED] on http://127.0.0.1:8000")
-    make_server("127.0.0.1", 8000, get_wsgi_application()).serve_forever()
+    make_server("127.0.0.1", 8000, get_wsgi_application(),
+                server_class=ThreadingWSGIServer).serve_forever()
