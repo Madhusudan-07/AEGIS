@@ -12,11 +12,10 @@ name: CodeQL
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: "0 7 * * 1"   # weekly re-scan
-  # (add `pull_request:` once you've switched off CodeQL default setup, so the two
-  #  don't run at the same time — GitHub rejects advanced + default together.)
 
 permissions:
   contents: read
