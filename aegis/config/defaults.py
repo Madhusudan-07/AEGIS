@@ -58,6 +58,19 @@ DEFAULT_JWT_LEEWAY = 10             # clock-skew tolerance (s)
 DEFAULT_ANOMALY_AUTHFAIL_THRESHOLD = 10   # auth failures in window -> alert
 DEFAULT_ANOMALY_WINDOW = 300              # 5 min
 
+# --- Deception (module: deception) ------------------------------------------
+# Decoy paths no legitimate client ever requests. A hit is a high-confidence probe:
+# the source IP is flagged, blocklisted, and cut off from every endpoint.
+DEFAULT_HONEYPOT_PATHS = (
+    "/.env", "/.git/config", "/.git/HEAD", "/.aws/credentials", "/.ssh/id_rsa",
+    "/wp-login.php", "/wp-admin", "/admin.php", "/phpmyadmin", "/actuator/env",
+    "/server-status", "/config.json", "/.DS_Store", "/vendor/phpunit",
+)
+DEFAULT_DECEPTION_BLOCK_TTL = 3600  # keep a trapped IP blocked for 1 hour
+
+# --- Egress / SSRF guard (service: egress) ----------------------------------
+DEFAULT_EGRESS_ALLOWED_SCHEMES = ("https",)  # add "http" only via egress_allow_http
+
 # Weak/placeholder secrets that must never reach production.
 SECRET_DENYLIST = frozenset(
     {

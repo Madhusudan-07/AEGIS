@@ -17,8 +17,10 @@ from .crypto import FieldCipher, TokenService, hash_password, verify_password
 from .exceptions import BootSelfCheckError, SecurityViolation
 from .modules.anomaly import AnomalyModule
 from .modules.audit import AuditLog, AuditModule
+from .egress import SsrfGuard
 from .modules.authn import AuthnModule
 from .modules.authz import AuthzModule
+from .modules.deception import DeceptionModule
 from .modules.encryption import EncryptionModule
 from .modules.errors import ErrorsModule
 from .modules.headers import HeadersModule
@@ -34,6 +36,7 @@ from .stores import build_store
 _MODULE_ORDER: list[tuple[str, type]] = [
     ("secrets", SecretsModule),
     ("headers", HeadersModule),       # resolves trusted client IP early
+    ("deception", DeceptionModule),   # cut off honeypot-trapped IPs before anything else
     ("ratelimit", RateLimitModule),   # per-IP DoS guard before auth
     ("authn", AuthnModule),           # populate identity from credential
     ("authz", AuthzModule),           # deny-by-default on required permission
@@ -63,6 +66,7 @@ class Engine:
         self.audit: AuditLog | None = None
         self.tokens: TokenService | None = None
         self.cipher: FieldCipher | None = None
+        self.ssrf: SsrfGuard | None = None
         self._modules: list = []
 
     # ------------------------------------------------------------------ boot
@@ -83,6 +87,14 @@ class Engine:
                 self.cipher = FieldCipher(cfg.field_encryption_key)
             except Exception as exc:  # invalid key -> refuse to boot
                 raise BootSelfCheckError(f"invalid field encryption key: {exc}") from exc
+
+        # SSRF egress guard is always available (no secret needed); the app opts in by
+        # calling engine.check_egress() before any server-side fetch.
+        self.ssrf = SsrfGuard(
+            allowed_schemes=cfg.egress_allowed_schemes,
+            allow_http=cfg.egress_allow_http,
+            host_allowlist=cfg.egress_host_allowlist,
+        )
 
         self._modules = build_modules(cfg, self)
 
@@ -211,3 +223,14 @@ class Engine:
         if not self.cipher:
             raise BootSelfCheckError("encryption module disabled or no key configured")
         return self.cipher.decrypt(token, aad=aad)
+
+    def check_egress(self, url: str) -> dict:
+        """SSRF guard (closes G2): validate an outbound URL before the app fetches it.
+
+        Returns ``{"url", "host", "addresses"}`` if safe; raises ``EgressBlocked`` if the
+        target resolves to a loopback/private/link-local/metadata address or a
+        disallowed scheme/host. Call this before any server-side fetch of a user URL.
+        """
+        if not self.ssrf:
+            raise BootSelfCheckError("Engine.check_egress called before boot()")
+        return self.ssrf.check(url)

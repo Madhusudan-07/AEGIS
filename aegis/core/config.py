@@ -83,9 +83,18 @@ class AegisConfig:
     anomaly_authfail_threshold: int = D.DEFAULT_ANOMALY_AUTHFAIL_THRESHOLD
     anomaly_window: int = D.DEFAULT_ANOMALY_WINDOW
 
+    # --- deception (module: deception) ---------------------------------------
+    honeypot_paths: tuple[str, ...] = D.DEFAULT_HONEYPOT_PATHS
+    deception_block_ttl: int = D.DEFAULT_DECEPTION_BLOCK_TTL
+
+    # --- egress / SSRF guard (service: engine.check_egress) -------------------
+    egress_allowed_schemes: tuple[str, ...] = D.DEFAULT_EGRESS_ALLOWED_SCHEMES
+    egress_allow_http: bool = False
+    egress_host_allowlist: tuple[str, ...] = ()
+
     # --- module toggles (each independently on/off; Requirement B) -----------
     enabled_modules: tuple[str, ...] = (
-        "secrets", "headers", "ratelimit", "authn", "authz",
+        "secrets", "headers", "deception", "ratelimit", "authn", "authz",
         "validation", "session", "encryption", "audit", "anomaly", "errors",
     )
 

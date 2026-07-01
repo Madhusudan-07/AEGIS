@@ -63,6 +63,10 @@ class SecureHandle:
     def decrypt_field(self, token, *, aad=b""):
         return self.engine.decrypt_field(token, aad=aad)
 
+    # SSRF egress guard — validate an outbound URL before fetching it
+    def check_egress(self, url):
+        return self.engine.check_egress(url)
+
     @property
     def audit(self):
         return self.engine.audit
