@@ -130,8 +130,9 @@ def fetch(request):
     try:
         with urllib.request.urlopen(url, timeout=3) as r:  # nosec B310 - egress-guarded above
             return JsonResponse({"fetched": url, "preview": r.read(120).decode("utf-8", "replace")})
-    except Exception as exc:
-        return JsonResponse({"fetched": url, "error": str(exc)}, status=502)
+    except Exception:
+        # Safe error handling: a generic message to the client, never the exception text.
+        return JsonResponse({"error": "upstream fetch failed"}, status=502)
 
 
 urlpatterns = [

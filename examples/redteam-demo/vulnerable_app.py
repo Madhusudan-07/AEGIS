@@ -105,6 +105,7 @@ def fetch(request):
         with urllib.request.urlopen(url, timeout=3) as r:  # nosec B310 - deliberately vulnerable
             return JsonResponse({"fetched": url, "preview": r.read(120).decode("utf-8", "replace")})
     except Exception as exc:
+        # VULN: leaks internal exception detail to the client (contrast with secure_app)
         return JsonResponse({"fetched": url, "error": str(exc)}, status=502)
 
 
