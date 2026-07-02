@@ -10,6 +10,7 @@ from .exceptions import (
     ConfigError,
     CryptoError,
     CsrfError,
+    EgressBlocked,
     RateLimitExceeded,
     SecretError,
     SecurityViolation,
@@ -22,5 +23,5 @@ __all__ = [
     "Identity", "RequestContext", "ResponseContext",
     "AegisError", "BootSelfCheckError", "ConfigError", "SecurityViolation",
     "AuthenticationError", "AuthorizationError", "ValidationFailed",
-    "RateLimitExceeded", "CsrfError", "SecretError", "CryptoError",
+    "RateLimitExceeded", "CsrfError", "SecretError", "CryptoError", "EgressBlocked",
 ]

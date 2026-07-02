@@ -133,6 +133,12 @@ A new stack = **one new adapter** that builds a `RequestContext` and applies a
 | 10 | Anomaly detection & alerting | redis counters | V7.2 | A09 |
 | 11 | Supply-chain (SBOM + CVE scan) | pip-audit / bandit / CycloneDX | V14.2 | A06 Vulnerable Components |
 | 12 | Safe error handling | orchestration | V7.4, V14.3 | A05 |
+| 13 | Deception / honeypot (trap + blocklist scanners) | redis blocklist | V11 | A09 |
+| — | SSRF egress guard *(service: `engine.check_egress`)* | stdlib `ipaddress`/`socket` | V5.2.6 | A10 SSRF |
+
+Modules 13 + the egress guard were added in v2 to close threat-model gaps **G3** and
+**G2** — see [THREAT_MODEL.md](THREAT_MODEL.md) and the live
+[red-team demo](examples/redteam-demo/) (attacks 5 and 8).
 
 Each module is independently toggleable: `AEGIS_DISABLED_MODULES=anomaly,encryption`
 or `AegisConfig(enabled_modules=(...))`.

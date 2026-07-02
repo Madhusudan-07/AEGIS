@@ -1,0 +1,15 @@
+name: "AEGIS CodeQL config"
+
+# CodeQL should scan the SHIPPED library (aegis/, security/, supplychain/) — that's what
+# protects real apps. The red-team demo under examples/ DELIBERATELY contains an insecure
+# app (the "before" half of the before/after) plus adversarial payloads; scanning it
+# produces intentional or false-positive alerts (e.g. an SSRF sink that is actually guarded
+# by engine.check_egress(), which CodeQL's taint tracker can't see). So examples/ is
+# excluded here — analogous to the gitleaks allow-list for test fixtures.
+#
+# NOTE: this file only takes effect with CodeQL *advanced setup* (a codeql.yml workflow
+# referencing `config-file: ./.github/codeql/codeql-config.yml`). On *default setup*,
+# dismiss the demo alerts instead (Won't fix / False positive) — see SECURITY.md.
+
+paths-ignore:
+  - examples
