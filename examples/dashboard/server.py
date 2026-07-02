@@ -67,6 +67,8 @@ CONFIG = AegisConfig(
     lockout_threshold=5,
     deception_block_ttl=90,            # short so demo re-runs recover
     egress_allow_http=True,
+    redis_url=os.environ.get("AEGIS_REDIS_URL", ""),  # set in Docker -> real Redis store
+
     exempt_path_prefixes=("/_aegis/",),  # the dashboard is never rate-limited/blocked
     enabled_modules=(
         "secrets", "headers", "deception", "ratelimit", "authn", "authz",
@@ -204,6 +206,7 @@ if __name__ == "__main__":
         daemon_threads = True
 
     wss.ServerHandler.server_software = ""
-    print("AEGIS dashboard:  http://127.0.0.1:8008/_aegis/")
-    wss.make_server("127.0.0.1", 8008, get_wsgi_application(),
+    host = os.environ.get("AEGIS_HOST", "127.0.0.1")  # Docker sets 0.0.0.0
+    print(f"AEGIS dashboard:  http://{host}:8008/_aegis/")
+    wss.make_server(host, 8008, get_wsgi_application(),
                     server_class=ThreadingWSGIServer).serve_forever()

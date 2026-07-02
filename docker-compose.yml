@@ -1,0 +1,25 @@
+# One command: `docker compose up` -> AEGIS dashboard on http://localhost:8008/_aegis/
+# The app's hot-path stores (rate-limit, lockout, deception blocklist) run on a REAL Redis
+# here — proving AEGIS's Redis store path, not just the in-memory dev fallback.
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  dashboard:
+    build: .
+    ports:
+      - "8008:8008"
+    environment:
+      AEGIS_ENV: development
+      AEGIS_HOST: 0.0.0.0
+      AEGIS_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped

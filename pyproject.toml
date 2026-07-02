@@ -23,6 +23,7 @@ dependencies = [
 django = ["Django>=4.2"]
 redis = ["redis>=5.0"]
 sanitize = ["bleach>=6.1"]    # vetted HTML sanitizer for output encoding
+fastapi = ["fastapi>=0.110", "uvicorn>=0.30"]   # FastAPI adapter + demo
 dev = [
     "pytest>=9.0.3,<10",
     "pip-audit>=2.7",         # dependency CVE scanning (CI gate)

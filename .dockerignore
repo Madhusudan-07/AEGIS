@@ -1,0 +1,11 @@
+.git
+.github
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.hypothesis
+reports
+sbom.json
+.venv
+venv

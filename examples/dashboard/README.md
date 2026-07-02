@@ -38,6 +38,17 @@ red team — including the honeypot that blocklists the local IP — never takes
 itself offline. (That's the `exempt_path_prefixes` config: monitoring/health endpoints are
 never authed, rate-limited, or blocked.)
 
+## Run with Docker (one command, real Redis)
+
+```bash
+docker compose up      # -> http://localhost:8008/_aegis/
+```
+
+Boots the dashboard + a **real Redis** — so the hot-path stores (rate-limit, lockout, the
+deception blocklist) run on Redis, not the in-memory dev fallback. This exercises AEGIS's
+`RedisStore` path exactly as production would (`AEGIS_REDIS_URL` is wired to the `redis`
+service). The image runs as a non-root user and binds `0.0.0.0` only inside the container.
+
 ## ⚠️ Honest scope
 - The dashboard is a **dev/operator observability view** — it has no auth of its own and
   binds to localhost. In production you'd put it behind your own auth and read from the
