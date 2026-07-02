@@ -99,6 +99,12 @@ tests/test_events.py::test_ring_buffer_is_bounded
 tests/test_events.py::test_stats_counts_by_type
 tests/test_events.py::test_subscriber_receives_events
 tests/test_events.py::test_unsubscribe_stops_delivery
+tests/test_fastapi_integration.py::test_admin_allowed
+tests/test_fastapi_integration.py::test_anonymous_on_protected_is_401
+tests/test_fastapi_integration.py::test_broken_access_control_denied
+tests/test_fastapi_integration.py::test_forged_alg_none_token_rejected
+tests/test_fastapi_integration.py::test_mass_assignment_blocked_natively
+tests/test_fastapi_integration.py::test_same_core_adds_security_headers
 tests/test_pipeline.py::test_auth_path_has_tighter_limit
 tests/test_pipeline.py::test_bearer_post_is_csrf_exempt
 tests/test_pipeline.py::test_cors_blocks_unlisted_origin
