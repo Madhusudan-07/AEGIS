@@ -120,16 +120,21 @@ def profile(request):
 def fetch(request):
     # A "link preview" feature — a classic SSRF surface. The egress guard validates the
     # target BEFORE any request is made, so it can't be pointed at internal services.
+    import urllib.parse
     import urllib.request
 
     url = request.GET.get("url", "")
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return JsonResponse({"error": "invalid url"}, status=400)
+    safe_url = parsed.geturl()
     try:
-        ENGINE.check_egress(url)                       # <-- the SSRF guard (closes G2)
+        ENGINE.check_egress(safe_url)                  # <-- the SSRF guard (closes G2)
     except SecurityViolation as exc:
         return JsonResponse({"error": exc.public_message}, status=exc.status_code)
     try:
-        with urllib.request.urlopen(url, timeout=3) as r:  # nosec B310 - egress-guarded above
-            return JsonResponse({"fetched": url, "preview": r.read(120).decode("utf-8", "replace")})
+        with urllib.request.urlopen(safe_url, timeout=3) as r:  # nosec B310 - egress-guarded above
+            return JsonResponse({"fetched": safe_url, "preview": r.read(120).decode("utf-8", "replace")})
     except Exception:
         # Safe error handling: a generic message to the client, never the exception text.
         return JsonResponse({"error": "upstream fetch failed"}, status=502)
