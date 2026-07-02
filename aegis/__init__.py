@@ -21,6 +21,7 @@ from .core import (
     BootSelfCheckError,
     CsrfError,
     Engine,
+    EventStream,
     Identity,
     Policy,
     RateLimitExceeded,
@@ -105,7 +106,7 @@ def reset_engine() -> None:
 
 __all__ = [
     "secure", "get_engine", "reset_engine", "SecureHandle", "__version__",
-    "AegisConfig", "Engine", "Policy",
+    "AegisConfig", "Engine", "Policy", "EventStream",
     "Identity", "RequestContext", "ResponseContext",
     "AegisError", "BootSelfCheckError", "SecurityViolation",
     "AuthenticationError", "AuthorizationError", "ValidationFailed",

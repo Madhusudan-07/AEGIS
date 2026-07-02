@@ -114,10 +114,18 @@ class AegisMiddleware:
                 "Django DEBUG=True in a production AEGIS environment; refusing to boot."
             )
 
+    def _exempt(self, path: str) -> bool:
+        return any(path.startswith(p) for p in self.engine.config.exempt_path_prefixes)
+
     def __call__(self, request):
         ctx = self.adapter.build_context(request)
         request._aegis_ctx = ctx
         request._aegis_ran = False
+
+        # Observability/health endpoints pass through untouched (not authed/rate-limited).
+        if self._exempt(ctx.path):
+            request._aegis_ran = True
+            return self.get_response(request)
 
         response = self.get_response(request)
 
@@ -132,7 +140,7 @@ class AegisMiddleware:
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         ctx = getattr(request, "_aegis_ctx", None)
-        if ctx is None:
+        if ctx is None or self._exempt(ctx.path):
             return None
         self._load_requirements(ctx, view_func)
         deny = self.engine.handle_request(ctx)

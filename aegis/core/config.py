@@ -73,6 +73,10 @@ class AegisConfig:
     lockout_base_seconds: int = D.DEFAULT_LOCKOUT_BASE_SECONDS
     auth_path_prefixes: tuple[str, ...] = ("/auth", "/login", "/api/auth")
 
+    # Paths the pipeline passes through untouched (health/metrics/observability
+    # endpoints that must not be authed, rate-limited, or blocked). Empty by default.
+    exempt_path_prefixes: tuple[str, ...] = ()
+
     # --- session / cookies ---------------------------------------------------
     cookie_secure: bool = True
     cookie_samesite: str = "Lax"
