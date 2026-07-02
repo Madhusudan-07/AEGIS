@@ -2,6 +2,7 @@
 from .config import AegisConfig
 from .context import Identity, RequestContext, ResponseContext
 from .engine import Engine
+from .events import EventStream
 from .exceptions import (
     AegisError,
     AuthenticationError,
@@ -19,7 +20,7 @@ from .exceptions import (
 from .policy import Policy
 
 __all__ = [
-    "AegisConfig", "Engine", "Policy",
+    "AegisConfig", "Engine", "Policy", "EventStream",
     "Identity", "RequestContext", "ResponseContext",
     "AegisError", "BootSelfCheckError", "ConfigError", "SecurityViolation",
     "AuthenticationError", "AuthorizationError", "ValidationFailed",

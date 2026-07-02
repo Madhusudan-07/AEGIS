@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AEGIS — Live Security Dashboard</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#111823; --panel2:#0e141d; --line:#1e2a3a;
+    --txt:#e6edf3; --muted:#8aa0b6; --accent:#4aa8ff;
+    --red:#ff5c6c; --amber:#ffb454; --green:#3ecf8e; --purple:#b58cff; --blue:#5aa9ff;
+    --mono:ui-monospace,"Cascadia Code",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px}
+  header{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line)}
+  header .logo{font-weight:700;font-size:18px;letter-spacing:.5px}
+  header .logo b{color:var(--accent)}
+  header .sub{color:var(--muted);font-size:12px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}
+  .dot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.4}}
+  .spacer{flex:1}
+  .btn{background:linear-gradient(180deg,#c0313f,#8c1f2a);color:#fff;border:0;border-radius:8px;
+    padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.1)} .btn:disabled{opacity:.5;cursor:default}
+  main{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px 22px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .card .n{font-size:28px;font-weight:700;font-family:var(--mono)}
+  .card .l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+  .card.red .n{color:var(--red)} .card.purple .n{color:var(--purple)}
+  .card.amber .n{color:var(--amber)} .card.blue .n{color:var(--blue)}
+  .chain{grid-column:1/3;display:flex;align-items:center;gap:10px}
+  .chain .ok{color:var(--green);font-weight:600} .chain .bad{color:var(--red);font-weight:600}
+  .attacklog{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    height:150px;overflow:auto}
+  .attacklog div{padding:1px 0}
+  .feed{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+    display:flex;flex-direction:column;min-height:70vh}
+  .feed h2{margin:0;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;
+    color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .rows{overflow:auto;flex:1}
+  .row{display:grid;grid-template-columns:88px 190px 1fr;gap:10px;padding:8px 16px;
+    border-bottom:1px solid #131c28;font-family:var(--mono);font-size:12.5px;align-items:baseline}
+  .row .t{color:var(--muted)}
+  .badge{padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;justify-self:start;white-space:nowrap}
+  .b-deny{background:rgba(255,92,108,.15);color:var(--red)}
+  .b-decep{background:rgba(181,140,255,.15);color:var(--purple)}
+  .b-alert{background:rgba(255,180,84,.15);color:var(--amber)}
+  .b-fail{background:rgba(255,180,84,.12);color:var(--amber)}
+  .b-ok{background:rgba(62,207,142,.14);color:var(--green)}
+  .b-info{background:rgba(90,169,255,.14);color:var(--blue)}
+  .row .d{color:var(--txt);opacity:.9}
+  .row.new{animation:flash 1s} @keyframes flash{from{background:rgba(74,168,255,.12)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🛡️ <b>AEGIS</b> — Live Security Dashboard</div>
+  <div class="sub"><span id="dot" class="dot"></span><span id="conn">connecting…</span></div>
+  <div class="spacer"></div>
+  <button id="run" class="btn">▶ Run red-team</button>
+</header>
+
+<main>
+  <div>
+    <div class="cards">
+      <div class="card"><div class="n" id="c-total">0</div><div class="l">Events</div></div>
+      <div class="card red"><div class="n" id="c-deny">0</div><div class="l">Blocked</div></div>
+      <div class="card purple"><div class="n" id="c-trap">0</div><div class="l">Honeypot traps</div></div>
+      <div class="card amber"><div class="n" id="c-alert">0</div><div class="l">Alerts</div></div>
+      <div class="card blue"><div class="n" id="c-authfail">0</div><div class="l">Auth failures</div></div>
+      <div class="card chain">
+        <div>Audit chain:</div><div id="chain" class="ok">verifying…</div>
+        <div style="color:var(--muted)">· <span id="chain-n">0</span> entries</div>
+      </div>
+    </div>
+    <div class="attacklog" id="attacklog"><div>› idle — click "Run red-team" to fire live attacks</div></div>
+  </div>
+
+  <div class="feed">
+    <h2>Live security events</h2>
+    <div class="rows" id="rows"></div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let counts = {total:0, deny:0, trap:0, alert:0, authfail:0};
+
+function badgeClass(ev){
+  if(ev==='aegis.deny') return 'b-deny';
+  if(ev.startsWith('deception.')) return 'b-decep';
+  if(ev==='aegis.alert'||ev.startsWith('anomaly.')||ev.startsWith('auth.lockout')) return 'b-alert';
+  if(ev==='auth.login_failure') return 'b-fail';
+  if(ev.endsWith('_success')||ev==='aegis.boot') return 'b-ok';
+  return 'b-info';
+}
+function describe(e){
+  const f = e.fields||{};
+  const parts=[];
+  if(f.violation) parts.push(f.violation);
+  if(f.kind) parts.push(f.kind);
+  if(f.method&&f.path) parts.push(f.method+' '+f.path);
+  else if(f.path) parts.push(f.path);
+  if(f.status) parts.push('→ '+f.status);
+  if(f.subject) parts.push('subj='+f.subject);
+  if(f.client_ip) parts.push('ip='+f.client_ip);
+  return parts.join('  ') || JSON.stringify(f).slice(0,80);
+}
+function addRow(e){
+  counts.total++;
+  if(e.event==='aegis.deny') counts.deny++;
+  if(e.event==='deception.honeypot_hit') counts.trap++;
+  if(e.event==='aegis.alert'||e.event.startsWith('anomaly.')) counts.alert++;
+  if(e.event==='auth.login_failure') counts.authfail++;
+  $('c-total').textContent=counts.total; $('c-deny').textContent=counts.deny;
+  $('c-trap').textContent=counts.trap; $('c-alert').textContent=counts.alert;
+  $('c-authfail').textContent=counts.authfail;
+
+  const row=document.createElement('div'); row.className='row new';
+  const t=new Date((e.ts||Date.now()/1000)*1000).toLocaleTimeString();
+  row.innerHTML=`<span class="t">${t}</span>`+
+    `<span class="badge ${badgeClass(e.event)}">${e.event}</span>`+
+    `<span class="d"></span>`;
+  row.querySelector('.d').textContent=describe(e);
+  const rows=$('rows'); rows.insertBefore(row, rows.firstChild);
+  while(rows.children.length>300) rows.removeChild(rows.lastChild);
+}
+
+const es = new EventSource('/_aegis/events');
+es.onopen=()=>{ $('dot').className='dot live'; $('conn').textContent='live'; };
+es.onerror=()=>{ $('dot').className='dot'; $('conn').textContent='reconnecting…'; };
+es.onmessage=ev=>{ try{ addRow(JSON.parse(ev.data)); }catch(e){} };
+
+async function refreshStats(){
+  try{
+    const s=await (await fetch('/_aegis/stats')).json();
+    $('chain').textContent = s.chain_ok?'✓ intact (tamper-evident)':'✗ BROKEN';
+    $('chain').className = s.chain_ok?'ok':'bad';
+    $('chain-n').textContent = s.audit_entries;
+  }catch(e){}
+}
+setInterval(refreshStats, 3000); refreshStats();
+
+// ---- client-side red team: the browser IS the attacker ----
+const log = m => { const d=document.createElement('div'); d.textContent='› '+m;
+  const el=$('attacklog'); el.appendChild(d); el.scrollTop=el.scrollHeight; };
+const b64url = o => btoa(JSON.stringify(o)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const noneJWT = p => b64url({alg:'none',typ:'JWT'})+'.'+b64url(p)+'.';
+async function req(method, url, {headers={},body=null}={}){
+  try{ const r=await fetch(url,{method,
+    headers: body?{...headers,'Content-Type':'application/json'}:headers,
+    body: body?JSON.stringify(body):null}); return r.status; }catch(e){ return 0; }
+}
+async function login(u,p){ const r=await fetch('/login',{method:'POST',
+  headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+  return r.status===200 ? (await r.json()).token : null; }
+
+async function runRedTeam(){
+  const btn=$('run'); btn.disabled=true; log('launching red-team…');
+  const forged=noneJWT({sub:'ghost',aud:'aegis',iss:'aegis',roles:['admin']});
+  log('forged alg:none admin token → '+await req('GET','/admin/users',{headers:{Authorization:'Bearer '+forged}}));
+  const bob=await login('bob','bobs-secret');
+  log('broken access (bob → admin) → '+await req('GET','/admin/users',{headers:{Authorization:'Bearer '+bob}}));
+  log('mass assignment (role=admin) → '+await req('POST','/profile',{headers:{Authorization:'Bearer '+bob},body:{display_name:'x',role:'admin'}}));
+  log('SSRF → internal address → '+await req('GET','/fetch?url=http://127.0.0.1:8008/'));
+  for(let i=0;i<6;i++) await req('POST','/login',{body:{username:'alice',password:'guess'+i}});
+  log('brute-force alice ×6 (lockout kicks in)');
+  await Promise.all(Array.from({length:60},()=>req('GET','/')));
+  log('request flood ×60 (rate-limit)');
+  log('scanner probes /.env → '+await req('GET','/.env')+' (honeypot: IP now blocked)');
+  log('✓ red-team complete — every attack is in the feed');
+  setTimeout(()=>btn.disabled=false, 2000);
+}
+$('run').addEventListener('click', runRedTeam);
+</script>
+</body>
+</html>

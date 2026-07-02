@@ -92,6 +92,13 @@ tests/test_egress.py::test_scheme_allowlist_blocks_non_https[file:///etc/passwd]
 tests/test_egress.py::test_scheme_allowlist_blocks_non_https[ftp://internal/]
 tests/test_egress.py::test_scheme_allowlist_blocks_non_https[gopher://evil/]
 tests/test_egress.py::test_scheme_allowlist_blocks_non_https[http://example.com/]
+tests/test_events.py::test_multiple_subscribers_all_receive
+tests/test_events.py::test_publish_and_recent
+tests/test_events.py::test_publish_never_raises_and_drops_bad_entry
+tests/test_events.py::test_ring_buffer_is_bounded
+tests/test_events.py::test_stats_counts_by_type
+tests/test_events.py::test_subscriber_receives_events
+tests/test_events.py::test_unsubscribe_stops_delivery
 tests/test_pipeline.py::test_auth_path_has_tighter_limit
 tests/test_pipeline.py::test_bearer_post_is_csrf_exempt
 tests/test_pipeline.py::test_cors_blocks_unlisted_origin
