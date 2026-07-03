@@ -43,7 +43,7 @@ from django.http import HttpResponse, JsonResponse, StreamingHttpResponse  # noq
 from django.urls import path  # noqa: E402
 
 import aegis  # noqa: E402
-from aegis import EventStream  # noqa: E402
+from aegis import FileAuditSink, PostgresAuditSink, build_event_stream, fan_out  # noqa: E402
 from aegis.adapters.django_adapter import require_auth, require_permission, validate_body  # noqa: E402
 from aegis.core.config import AegisConfig  # noqa: E402
 from aegis.core.crypto import generate_field_key  # noqa: E402
@@ -51,7 +51,6 @@ from aegis.core.exceptions import SecurityViolation  # noqa: E402
 from aegis.core.policy import Policy  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-STREAM = EventStream(capacity=500)  # <- the observability seam
 
 POLICY = (
     Policy()
@@ -76,9 +75,23 @@ CONFIG = AegisConfig(
     ),
 )
 
+# The observability seam. In Docker (AEGIS_REDIS_URL set) this is a Redis-backed stream —
+# many app instances share ONE live feed; in dev it's the in-memory ring. Same consumers.
+STREAM = build_event_stream(CONFIG)
+
+# Durable audit: point history at Postgres (AEGIS_AUDIT_DSN) or a JSONL file
+# (AEGIS_AUDIT_FILE). fan_out feeds BOTH the live dashboard and durable storage from the
+# one sink seam, so the hash-chained trail survives a restart.
+_durable = None
+if os.environ.get("AEGIS_AUDIT_DSN"):
+    _durable = PostgresAuditSink(os.environ["AEGIS_AUDIT_DSN"])
+elif os.environ.get("AEGIS_AUDIT_FILE"):
+    _durable = FileAuditSink(os.environ["AEGIS_AUDIT_FILE"])
+AUDIT_SINK = fan_out(STREAM.publish, _durable) if _durable else STREAM.publish
+
 aegis.reset_engine()
-# audit_sink -> the stream: EVERY security event (deny/alert/honeypot/auth) becomes live.
-HANDLE = aegis.secure(CONFIG, policy=POLICY, audit_sink=STREAM.publish)
+# audit_sink -> the stream(+durable): EVERY security event (deny/alert/honeypot/auth) is live.
+HANDLE = aegis.secure(CONFIG, policy=POLICY, audit_sink=AUDIT_SINK)
 ENGINE = HANDLE.engine
 
 USERS = {
