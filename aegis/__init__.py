@@ -22,13 +22,18 @@ from .core import (
     CsrfError,
     Engine,
     EventStream,
+    FileAuditSink,
     Identity,
     Policy,
+    PostgresAuditSink,
     RateLimitExceeded,
+    RedisEventStream,
     RequestContext,
     ResponseContext,
     SecurityViolation,
     ValidationFailed,
+    build_event_stream,
+    fan_out,
 )
 
 __version__ = "0.1.0"
@@ -107,6 +112,8 @@ def reset_engine() -> None:
 __all__ = [
     "secure", "get_engine", "reset_engine", "SecureHandle", "__version__",
     "AegisConfig", "Engine", "Policy", "EventStream",
+    "RedisEventStream", "build_event_stream",
+    "FileAuditSink", "PostgresAuditSink", "fan_out",
     "Identity", "RequestContext", "ResponseContext",
     "AegisError", "BootSelfCheckError", "SecurityViolation",
     "AuthenticationError", "AuthorizationError", "ValidationFailed",

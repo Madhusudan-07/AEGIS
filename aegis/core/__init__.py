@@ -2,7 +2,7 @@
 from .config import AegisConfig
 from .context import Identity, RequestContext, ResponseContext
 from .engine import Engine
-from .events import EventStream
+from .events import EventStream, RedisEventStream, build_event_stream
 from .exceptions import (
     AegisError,
     AuthenticationError,
@@ -18,9 +18,12 @@ from .exceptions import (
     ValidationFailed,
 )
 from .policy import Policy
+from .sinks import FileAuditSink, PostgresAuditSink, fan_out
 
 __all__ = [
     "AegisConfig", "Engine", "Policy", "EventStream",
+    "RedisEventStream", "build_event_stream",
+    "FileAuditSink", "PostgresAuditSink", "fan_out",
     "Identity", "RequestContext", "ResponseContext",
     "AegisError", "BootSelfCheckError", "ConfigError", "SecurityViolation",
     "AuthenticationError", "AuthorizationError", "ValidationFailed",

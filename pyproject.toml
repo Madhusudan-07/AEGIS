@@ -21,7 +21,8 @@ dependencies = [
 
 [project.optional-dependencies]
 django = ["Django>=4.2"]
-redis = ["redis>=5.0"]
+redis = ["redis>=5.0"]         # multi-instance stores + RedisEventStream
+postgres = ["psycopg[binary]>=3.1"]   # durable PostgresAuditSink
 sanitize = ["bleach>=6.1"]    # vetted HTML sanitizer for output encoding
 fastapi = ["fastapi>=0.110", "uvicorn>=0.30"]   # FastAPI adapter + demo
 dev = [
@@ -29,6 +30,7 @@ dev = [
     "pip-audit>=2.7",         # dependency CVE scanning (CI gate)
     "bandit>=1.7",            # SAST (CI gate)
     "hypothesis>=6.100",      # property-based fuzzing of validation/crypto surfaces
+    "fakeredis>=2.20",        # in-process Redis (streams) for RedisEventStream tests
 ]
 
 [tool.setuptools.packages.find]

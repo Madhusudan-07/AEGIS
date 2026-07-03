@@ -8,3 +8,5 @@ Django==6.0.6
 # FastAPI adapter test deps (httpx backs FastAPI's TestClient).
 fastapi==0.136.1
 httpx==0.28.1
+# In-process Redis (incl. streams) for RedisEventStream tests; pulls a compatible redis-py.
+fakeredis==2.36.2

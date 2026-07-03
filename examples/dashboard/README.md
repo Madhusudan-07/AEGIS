@@ -23,36 +23,49 @@ python examples/dashboard/run_dashboard.py     # opens http://127.0.0.1:8008/_ae
 The key line is in `server.py`:
 
 ```python
-aegis.secure(config, policy=POLICY, audit_sink=STREAM.publish)
+STREAM = build_event_stream(config)          # in-memory (dev) OR Redis (multi-instance)
+audit_sink = fan_out(STREAM.publish, durable_sink)   # live feed AND durable storage
+aegis.secure(config, policy=POLICY, audit_sink=audit_sink)
 ```
 
 **No new plumbing.** Every security event already flows through the audit log's `sink`
 callback (designed in Phase 0); pointing that sink at an `EventStream` makes the whole
 system observable with **zero changes to the audit chain**. The `EventStream`
 (`aegis/core/events.py`) mirrors the exact in-memory-now / Redis-later shape of AEGIS's
-counter stores — swap in a `RedisEventStream` and the dashboard works across many app
-instances, no consumer changes.
+counter stores — and `build_event_stream(config)` picks the transport just like
+`build_store`: a `RedisEventStream` (Redis Streams `XADD`/`XREAD`) when `redis_url` is set,
+so **many app instances share one live feed with zero consumer changes**, else the
+in-memory ring for dev. `fan_out` then feeds that live feed **and** a durable audit sink
+(`FileAuditSink` JSONL or `PostgresAuditSink`) from the one seam, so the hash-chained trail
+survives restarts.
 
 The dashboard's own routes live under an **exempt** prefix (`/_aegis/`), so firing the
 red team — including the honeypot that blocklists the local IP — never takes the dashboard
 itself offline. (That's the `exempt_path_prefixes` config: monitoring/health endpoints are
 never authed, rate-limited, or blocked.)
 
-## Run with Docker (one command, real Redis)
+## Run with Docker (one command: app + Redis + Postgres)
 
 ```bash
 docker compose up      # -> http://localhost:8008/_aegis/
 ```
 
-Boots the dashboard + a **real Redis** — so the hot-path stores (rate-limit, lockout, the
-deception blocklist) run on Redis, not the in-memory dev fallback. This exercises AEGIS's
-`RedisStore` path exactly as production would (`AEGIS_REDIS_URL` is wired to the `redis`
-service). The image runs as a non-root user and binds `0.0.0.0` only inside the container.
+Boots a complete production-shaped stack:
+- **real Redis** — the hot-path stores (rate-limit, lockout, deception blocklist) **and**
+  the live `RedisEventStream` run on Redis, not the in-memory dev fallback
+  (`AEGIS_REDIS_URL`), exercising AEGIS's multi-instance path exactly as production would;
+- **real Postgres** — the hash-chained audit trail is written durably via `PostgresAuditSink`
+  (`AEGIS_AUDIT_DSN`) to a persistent volume, so it **survives restarts**;
+- the dashboard image runs as a **non-root** user and binds `0.0.0.0` only inside the container.
+
+(Locally, without Docker, the same code falls back to the in-memory stream; set
+`AEGIS_AUDIT_FILE=./audit.jsonl` to get a durable JSONL trail with zero dependencies.)
 
 ## ⚠️ Honest scope
 - The dashboard is a **dev/operator observability view** — it has no auth of its own and
-  binds to localhost. In production you'd put it behind your own auth and read from the
-  Redis stream, not the in-process one.
-- It shows *what AEGIS did* (blocks, alerts, the audit chain). It is not a SIEM and does
-  not correlate across services or retain history beyond the in-memory ring buffer —
-  wire the `audit_sink` to durable storage (Postgres) for that.
+  binds to localhost. In production you'd put it behind your own auth. (It already reads
+  from the shared Redis stream under Docker, so it works across instances.)
+- It shows *what AEGIS did* (blocks, alerts, the audit chain). It is **not a SIEM** and does
+  not correlate across services — but history is now durable (Postgres / JSONL via the
+  `audit_sink`), not just the in-memory ring. Point a real SIEM at that trail for
+  cross-service correlation.

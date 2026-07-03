@@ -1,12 +1,30 @@
 # One command: `docker compose up` -> AEGIS dashboard on http://localhost:8008/_aegis/
-# The app's hot-path stores (rate-limit, lockout, deception blocklist) run on a REAL Redis
-# here — proving AEGIS's Redis store path, not just the in-memory dev fallback.
+# A complete production-shaped stack:
+#   redis     — hot-path stores (rate-limit, lockout, deception) + the live RedisEventStream
+#   postgres  — the durable, hash-chained audit trail (survives restarts)
+#   dashboard — the AEGIS-protected app + observability plane
+# proving AEGIS's Redis + Postgres paths, not just the in-memory dev fallbacks.
 services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aegis
+      POSTGRES_PASSWORD: aegis            # nosec - local demo stack only; not a real secret
+      POSTGRES_DB: aegis_audit
+    volumes:
+      - audit-data:/var/lib/postgresql/data   # audit trail persists across restarts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis -d aegis_audit"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -19,7 +37,13 @@ services:
       AEGIS_ENV: development
       AEGIS_HOST: 0.0.0.0
       AEGIS_REDIS_URL: redis://redis:6379/0
+      AEGIS_AUDIT_DSN: postgresql://aegis:aegis@postgres:5432/aegis_audit
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  audit-data:
