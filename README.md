@@ -113,7 +113,26 @@ tests/                   # unit + integration + adversarial + fail-closed proofs
 ```
 
 A new stack = **one new adapter** that builds a `RequestContext` and applies a
-`ResponseContext`. Zero `core/` changes.
+`ResponseContext`. Zero `core/` changes:
+
+```mermaid
+flowchart TB
+    subgraph adapters["Adapters — the ONLY framework-specific code"]
+      dj["Django"]
+      fa["FastAPI"]
+      gen["Generic (WSGI)"]
+    end
+    ctx["RequestContext<br/>(neutral seam)"]
+    engine{{"Engine — orchestration + fail-closed boot self-check"}}
+    modules["12 modules: Secrets · Headers · Deception · RateLimit ·<br/>AuthN · AuthZ · Validation · Session · Anomaly ·<br/>Encryption · Audit · SafeErrors"]
+    dj --> ctx
+    fa --> ctx
+    gen --> ctx
+    ctx --> engine --> modules
+```
+
+📐 **Full diagrams** — system context, the fail-closed request pipeline, trust
+boundaries, and the self-hardening loop — in **[docs/architecture.md](docs/architecture.md)**.
 
 ---
 
