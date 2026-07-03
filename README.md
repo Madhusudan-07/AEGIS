@@ -101,10 +101,14 @@ aegis/
     crypto.py            #   wrappers over argon2-cffi / PyJWT / cryptography (NO primitives)
     policy.py            #   RBAC engine (deny-by-default)
     stores.py            #   Redis / in-memory counter stores (fail-closed)
+    egress.py            #   SSRF egress guard (scheme allowlist + private-range block)
+    events.py            #   live event stream — in-memory / Redis (the observability seam)
+    sinks.py             #   durable audit sinks (JSONL / Postgres) + fan_out
     redaction.py         #   strip secrets/PII from logs & errors
     modules/             #   the 12 toggleable security modules
   adapters/              # thin; the ONLY framework-specific code
     django_adapter.py    #   middleware + @require_* decorators
+    fastapi_adapter.py   #   ASGI middleware + Depends() authz
     generic.py           #   any-framework adapter
   config/defaults.py     # secure-by-default constants
 supplychain/sbom.py      # CycloneDX SBOM generator (advisory)
@@ -113,7 +117,10 @@ tests/                   # unit + integration + adversarial + fail-closed proofs
 ```
 
 A new stack = **one new adapter** that builds a `RequestContext` and applies a
-`ResponseContext`. Zero `core/` changes:
+`ResponseContext`. Zero `core/` changes. Every security event exits through the one
+`audit_sink` seam, which `fan_out` splits into a **live feed** (in-memory or a shared
+`RedisEventStream` for multi-instance dashboards) and **durable, hash-chained storage**
+(Postgres / JSONL):
 
 ```mermaid
 flowchart TB
@@ -129,6 +136,9 @@ flowchart TB
     fa --> ctx
     gen --> ctx
     ctx --> engine --> modules
+    modules -->|audit_sink| fanout(["fan_out"])
+    fanout --> live["EventStream / RedisEventStream<br/>→ live dashboard (SSE)"]
+    fanout --> durable[("Durable audit<br/>Postgres / JSONL")]
 ```
 
 📐 **Full diagrams** — system context, the fail-closed request pipeline, trust
