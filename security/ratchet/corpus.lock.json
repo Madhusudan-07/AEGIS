@@ -16,6 +16,14 @@
       "threat": "T1/A02",
       "summary": "malformed field ciphertext must fail closed (fuzz find)",
       "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260804-AGENT01",
+      "path": "tests/regression/test_REG_20260804_AGENT01_cryptography.py",
+      "sha256": "7e34103b6f826bfffaf1df812de5b34d341f034b5e8ad787257a3ba08d85ea55",
+      "threat": "A06",
+      "summary": "cryptography 49.0.0 affected by CVE-2026-69247 (fix: 50.0.0)",
+      "added": "2026-08-04"
     }
   ]
 }
