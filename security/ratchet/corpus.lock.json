@@ -16,6 +16,14 @@
       "threat": "T1/A02",
       "summary": "malformed field ciphertext must fail closed (fuzz find)",
       "added": "2026-06-26"
+    },
+    {
+      "id": "REG-20260823-AGENT01",
+      "path": "tests/regression/test_REG_20260823_AGENT01_cryptography.py",
+      "sha256": "d4cd6b17c2137b136d8553f6686fc172af8a3d1d0b8ee476065d1619cccf0a59",
+      "threat": "A06",
+      "summary": "cryptography 49.0.0 affected by PYSEC-2026-3552 (fix: 50.0.0)",
+      "added": "2026-08-23"
     }
   ]
 }
